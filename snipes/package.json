@@ -1,0 +1,26 @@
+{
+  "name": "slack-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Slack snipes bot on Cloudflare Workers (Supabase-backed)",
+  "main": "src/worker.mjs",
+  "scripts": {
+    "start": "wrangler dev --port 3000",
+    "deploy": "wrangler deploy",
+    "lambda:start": "serverless offline",
+    "lambda:deploy": "serverless deploy"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.22.0",
+    "@supabase/supabase-js": "2.105.0",
+    "slack-cloudflare-workers": "^1.3.10"
+  },
+  "devDependencies": {
+    "serverless": "^3.39.0",
+    "serverless-offline": "13.9.0",
+    "wrangler": "^4.133.0"
+  }
+}

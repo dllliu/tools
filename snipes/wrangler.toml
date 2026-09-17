@@ -1,0 +1,6 @@
+name = "snipes"
+main = "src/worker.mjs"
+compatibility_date = "2026-09-01"
+
+# The store and config read process.env, which needs the Node compatibility layer.
+compatibility_flags = ["nodejs_compat"]
