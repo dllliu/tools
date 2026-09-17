@@ -1,12 +1,12 @@
+const config = require('../config');
 const { recordSnipe, countSnipesTaken, countTimesSniped } = require('../store/snipes');
 const { displayName } = require('../slack/userNames');
 
 /**
- * Counts snipes in one channel. A snipe is an image post that mentions
- * someone: the poster gets credit, each mentioned user gets a "sniped".
- * Leave CHANNEL_ID empty to disable.
+ * Counts snipes in the channel named by SNIPES_CHANNEL_ID. A snipe is an image
+ * post that mentions someone: the poster gets credit, each mentioned user gets
+ * a "sniped".
  */
-const CHANNEL_ID = 'C0C2C7MK9NV';
 
 // Slack writes mentions as <@U123> and sometimes <@U123|display-name>.
 const MENTION_PATTERN = /<@([UW][A-Z0-9]+)(?:\|[^>]*)?>/g;
@@ -29,15 +29,16 @@ function plural(count, noun) {
 }
 
 async function handleChannelMessage({ message, say, client, logger }) {
-  if (!CHANNEL_ID || message.channel !== CHANNEL_ID) return;
   // Photo posts arrive as file_share; every other subtype is channel noise.
   if (message.subtype && message.subtype !== 'file_share') return;
   if (message.bot_id) return;
 
-  const targets = mentionedUsers(message);
-  if (targets.length === 0) return;
-
   try {
+    if (message.channel !== config.snipes.channelId()) return;
+
+    const targets = mentionedUsers(message);
+    if (targets.length === 0) return;
+
     if (!hasImage(message)) {
       await say({
         text: '📸 You need to attach an image for this to count!',
@@ -77,4 +78,4 @@ async function handleChannelMessage({ message, say, client, logger }) {
   }
 }
 
-module.exports = { handleChannelMessage, CHANNEL_ID };
+module.exports = { handleChannelMessage };

@@ -8,8 +8,8 @@ with counts stored in Supabase.
 
 - Welcome DM on `team_join`
 - Snipe counter for one channel: an image post that mentions someone credits the
-  poster with a snipe and each mentioned user with a "sniped" (set the channel in
-  `src/handlers/channelMessage.js`)
+  poster with a snipe and each mentioned user with a "sniped" (set the channel
+  with `SNIPES_CHANNEL_ID`)
 
 Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-js`.
 
@@ -32,6 +32,8 @@ Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-
 5. Install the app to your workspace and copy the **Bot Token** and **Signing Secret**.
 6. Create the table by running `supabase/schema.sql` in the Supabase SQL editor,
    then copy the project URL and service role key from **Project Settings → API**.
+7. Copy the channel id you want to count snipes in (right-click the channel in
+   Slack → **View channel details**) into `SNIPES_CHANNEL_ID`.
 
 Wrangler needs Node 22+:
 
@@ -69,6 +71,7 @@ wrangler secret put SLACK_SIGNING_SECRET
 wrangler secret put SLACK_BOT_TOKEN
 wrangler secret put SUPABASE_URL
 wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+wrangler secret put SNIPES_CHANNEL_ID
 ```
 
 Then point Event Subscriptions at `https://<worker-subdomain>.workers.dev/slack/events`.
@@ -82,5 +85,6 @@ running to avoid maintaining two entry points.
 ## Next steps
 
 - Edit welcome copy in `src/handlers/welcome.js`
+- Point the bot at a different channel with `SNIPES_CHANNEL_ID`
 - Adjust what counts as a snipe in `src/handlers/channelMessage.js`
 - Add a leaderboard command on top of the counts in `src/store/snipes.js`
