@@ -1,5 +1,5 @@
 const config = require('../config');
-const { recordSnipe, countSnipesTaken, countTimesSniped } = require('../store/snipes');
+const { recordSnipes, countSnipesTaken, countTimesSniped } = require('../store/snipes');
 const { displayName } = require('../slack/userNames');
 
 /**
@@ -25,7 +25,7 @@ function mentionedUsers(message) {
 }
 
 function plural(count, noun) {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+  return `\`${count}\` ${noun}${count === 1 ? '' : 's'}`;
 }
 
 async function handleChannelMessage({ message, say, client, logger }) {
@@ -47,18 +47,14 @@ async function handleChannelMessage({ message, say, client, logger }) {
       return;
     }
 
-    const recorded = await Promise.all(
-      targets.map((snipedId) =>
-        recordSnipe({
-          sniperId: message.user,
-          snipedId,
-          channelId: message.channel,
-          messageTs: message.ts,
-        }),
-      ),
-    );
+    const recorded = await recordSnipes({
+      sniperId: message.user,
+      snipedIds: targets,
+      channelId: message.channel,
+      messageTs: message.ts,
+    });
 
-    if (!recorded.some(Boolean)) return;
+    if (recorded === 0) return;
 
     const [taken, sniped, sniperName, targetNames] = await Promise.all([
       countSnipesTaken(message.user),

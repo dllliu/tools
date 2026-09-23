@@ -5,7 +5,7 @@
   "description": "Slack snipes bot on Cloudflare Workers (Supabase-backed)",
   "main": "src/worker.mjs",
   "scripts": {
-    "start": "wrangler dev --port 3000",
+    "start": "wrangler dev --port 3001",
     "deploy": "wrangler deploy",
     "lambda:start": "serverless offline",
     "lambda:deploy": "serverless deploy"

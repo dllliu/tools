@@ -4,3 +4,10 @@ compatibility_date = "2026-09-01"
 
 # The store and config read process.env, which needs the Node compatibility layer.
 compatibility_flags = ["nodejs_compat"]
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[placement]
+mode = "smart"
