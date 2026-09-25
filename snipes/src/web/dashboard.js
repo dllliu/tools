@@ -38,11 +38,29 @@ const STYLES = `
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 0 .5rem .5rem; font-weight: 600; }
   td { padding: .6rem .5rem; border-top: 1px solid var(--line); }
-  .rank { width: 2.5rem; }
-  .medal { font-size: 1.2rem; line-height: 1; }
+  .rank { width: 4rem; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .medal { font-size: 1.1rem; line-height: 1; }
   .total { text-align: right; width: 5rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
   .id { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; }
   .empty { padding: 2rem 0; color: var(--muted); }
+  .faq { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  /* Same small-caps treatment as the column headers, so the label reads as
+     section furniture rather than as another question. */
+  .faq h2 {
+    margin: 0 0 .5rem; padding: 0 .5rem; font-size: .75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  }
+  .faq details { border-bottom: 1px solid var(--line); }
+  /* list-style drops the built-in triangle, which also frees the summary to
+     lay itself out as a flex row; the -webkit rule does the same in Safari. */
+  .faq summary {
+    display: flex; gap: .6rem; align-items: baseline; cursor: pointer;
+    list-style: none; padding: .9rem .5rem; font-size: .95rem; font-weight: 600;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::before { content: '+'; color: var(--accent); font-weight: 400; }
+  .faq details[open] summary::before { content: '\\2212'; }
+  .faq p { margin: 0; padding: 0 .5rem 1rem 1.6rem; color: var(--muted); font-size: .9rem; max-width: 34rem; }
 `;
 
 const MEDALS = [
@@ -52,28 +70,29 @@ const MEDALS = [
 ];
 
 /**
- * Competition ranking: everyone on the same score shares a place, and the next
- * score skips the places they used up. Without this a tie at the cutoff would
- * hand bronze to whichever row the sort happened to put first.
+ * Everyone on the same score shares a place, and places run straight on from
+ * there: two people tied at third are both third, and the next person down is
+ * fourth. Ranking by score rather than row order also keeps a tie at the
+ * cutoff from handing bronze to whoever the sort happened to put first.
  */
 function withRanks(rows) {
   let rank = 0;
   let previousTotal = null;
 
-  return rows.map((row, index) => {
+  return rows.map((row) => {
     if (row.total !== previousTotal) {
-      rank = index + 1;
+      rank += 1;
       previousTotal = row.total;
     }
     return { ...row, rank };
   });
 }
 
-// Only the podium is marked. Everyone else keeps the empty cell so their
-// names stay lined up with the top three.
+// The medal says which place it is on the podium, so the number would only
+// repeat it. Below third there is no medal left to say it, so the number does.
 function renderRank(rank) {
   const medal = MEDALS[rank - 1];
-  if (!medal) return '';
+  if (!medal) return String(rank);
   return `<span class="medal" role="img" aria-label="${medal.label}">${medal.icon}</span>`;
 }
 
@@ -99,9 +118,34 @@ function renderBoard({ id, rows, heading, hidden }) {
   return (
     `<div id="${id}"${hidden ? ' hidden' : ''}>` +
     // Fixed layout takes its widths from this row, so the classes belong here.
-    '<table><thead><tr><th class="rank"></th><th>Who</th>' +
+    '<table><thead><tr><th class="rank">Rank</th><th>Who</th>' +
     `<th class="total">${heading}</th></tr></thead>` +
     `<tbody>${withRanks(rows).map(renderRow).join('')}</tbody></table></div>`
+  );
+}
+
+const FAQ = [
+  {
+    question: 'How It Works',
+    answer:
+      'Snipe someone by taking a picture of them, tagging them on Slack, and ' +
+      'posting it in the #web-snipes channel.',
+  },
+];
+
+// Native disclosure rather than a scripted accordion: the answers still open
+// with scripting off, and the keyboard and screen reader behaviour is built in.
+function renderFaq() {
+  const entries = FAQ.map(
+    ({ question, answer }) =>
+      `<details><summary>${escapeHtml(question)}</summary>` +
+      `<p>${escapeHtml(answer)}</p></details>`,
+  ).join('');
+
+  return (
+    '<section class="faq" aria-labelledby="faq-title">' +
+    '<h2 id="faq-title">Frequently Asked Questions</h2>' +
+    `${entries}</section>`
   );
 }
 
@@ -125,6 +169,8 @@ function renderDashboard({ snipers, sniped }) {
 
   ${renderBoard({ id: 'board-snipers', rows: snipers, heading: 'Snipes' })}
   ${renderBoard({ id: 'board-sniped', rows: sniped, heading: 'Sniped', hidden: true })}
+
+  ${renderFaq()}
 </main>
 
 <script>
