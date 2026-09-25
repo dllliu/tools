@@ -34,12 +34,14 @@ const STYLES = `
     padding: .4rem .9rem; border-radius: 999px; font: inherit; font-size: .875rem;
   }
   .toggle button[aria-pressed="true"] { background: var(--accent); color: #17181c; font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; }
+  /* Fixed layout so the two boards line up exactly and switching between
+     them does not nudge the columns. */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 0 .5rem .5rem; font-weight: 600; }
   td { padding: .6rem .5rem; border-top: 1px solid var(--line); }
   .rank { width: 2.5rem; }
   .medal { font-size: 1.2rem; line-height: 1; }
-  .total { text-align: right; width: 5rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .total { text-align: right; width: 5rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
   .id { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; }
   .empty { padding: 2rem 0; color: var(--muted); }
 `;
@@ -97,7 +99,8 @@ function renderBoard({ id, rows, heading, hidden }) {
 
   return (
     `<div id="${id}"${hidden ? ' hidden' : ''}>` +
-    '<table><thead><tr><th></th><th>Who</th>' +
+    // Fixed layout takes its widths from this row, so the classes belong here.
+    '<table><thead><tr><th class="rank"></th><th>Who</th>' +
     `<th class="total">${heading}</th></tr></thead>` +
     `<tbody>${withRanks(rows).map(renderRow).join('')}</tbody></table></div>`
   );
@@ -124,7 +127,7 @@ function renderDashboard({ snipers, sniped }) {
   </div>
 
   ${renderBoard({ id: 'board-snipers', rows: snipers, heading: 'Snipes' })}
-  ${renderBoard({ id: 'board-sniped', rows: sniped, heading: 'Times sniped', hidden: true })}
+  ${renderBoard({ id: 'board-sniped', rows: sniped, heading: 'Sniped', hidden: true })}
 </main>
 
 <script>
