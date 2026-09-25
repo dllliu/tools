@@ -2,6 +2,7 @@ import { SlackApp } from 'slack-cloudflare-workers';
 import { handleTeamJoin } from './handlers/welcome.js';
 import { handleChannelMessage } from './handlers/channelMessage.js';
 import { handleDashboardRequest } from './handlers/dashboard.js';
+import { handleTeamScore } from './handlers/teamScore.js';
 
 // Workers hands bindings to each request, while config.js and the store read
 // process.env, so mirror them across before any handler runs.
@@ -35,6 +36,20 @@ function slackApp(env) {
         client: context.client,
         logger: console,
       }),
+    )
+    // Acknowledge with nothing so Slack's three seconds are never at stake,
+    // then let the lazy handler answer over the response url once the counts
+    // are in. Workers runs it on the ctx passed to run() below.
+    .command(
+      '/team-score',
+      async () => '',
+      async ({ payload, context }) =>
+        handleTeamScore({
+          text: payload.text,
+          client: context.client,
+          respond: context.respond,
+          logger: console,
+        }),
     );
 }
 

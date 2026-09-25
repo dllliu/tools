@@ -12,6 +12,8 @@ with counts stored in Supabase.
   with `SNIPES_CHANNEL_ID`)
 - Public leaderboard at the Worker's root url, with all-time boards for both
   snipers and their victims
+- `/team-score "team name"` reports what each person on a team scored that
+  week, and the team's total
 
 Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-js`.
 
@@ -38,6 +40,10 @@ Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-
    it; everything in there is `if not exists` or `create or replace`.
 7. Copy the channel id you want to count snipes in (right-click the channel in
    Slack → **View channel details**) into `SNIPES_CHANNEL_ID`.
+8. Under **Slash Commands**, create `/team-score` with the same Request URL as
+   Event Subscriptions (`.../slack/events`) and the usage hint
+   `"team name" [last | -2 | 2026-09-21]`. Adding a command changes the app's
+   scopes, so Slack will ask you to reinstall it.
 
 Wrangler needs Node 22+:
 
@@ -71,6 +77,32 @@ each warms the other), and ids common to both boards are resolved once.
 Anyone who fails to resolve falls back to their raw id. If the board ever
 approaches a hundred people, a single paginated `users.list` becomes the
 better trade.
+
+## Team scores
+
+`/team-score "Web Desk"` lists everyone on the roster with the snipes they
+took that week, then the total. People who scored nothing are listed at zero,
+since a team score is about who turned up as much as who led.
+
+Add a week to look further back:
+
+| Argument | Week |
+| --- | --- |
+| *(none)* or `this` | the current one |
+| `last` | the one before |
+| `-3` | three back |
+| `2026-09-21` | whichever week holds that date |
+
+Quote a name that has spaces in it. Without quotes the last word is only read
+as a week if it could not be anything else, so `Sports Desk` stays whole.
+
+Rosters live in the `teams` table, one row per person per team, so a desk can
+be re-staffed from the Supabase table editor without a deploy. Names match
+without regard to case.
+
+Weeks run Monday to Sunday in Ann Arbor time, not UTC, so a Sunday evening
+snipe counts against the week it happened in. That boundary is set in two
+places that have to agree: the `weekly_snipers` view and `src/weeks.js`.
 
 ## Local testing
 
@@ -119,4 +151,5 @@ running to avoid maintaining two entry points.
 - Point the bot at a different channel with `SNIPES_CHANNEL_ID`
 - Adjust what counts as a snipe in `src/handlers/channelMessage.js`
 - Restyle the leaderboard in `src/web/dashboard.js`
-- Add weekly or per-semester boards alongside the views in `supabase/schema.sql`
+- Add per-semester boards alongside the views in `supabase/schema.sql`
+- Put the weekly numbers on the web leaderboard too, reusing `weekly_snipers`

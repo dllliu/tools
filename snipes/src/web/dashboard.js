@@ -165,8 +165,7 @@ const FAQ = [
   {
     question: 'How will this data be used?',
     answer:
-      'The snipes/sniped count will be aggregated per user per week and per semester.' + 
-      'Data will be cleared and reset every semester.',
+      'The snipes/sniped count will be aggregated per user per week and per semester for quest point(s) tracking. Data will be cleared and reset every semester.',
   },
   {
     question: 'Not seeing your question here?',

@@ -40,3 +40,25 @@ select
 from snipes
 group by sniped_id
 order by total_sniped desc;
+
+-- Rosters behind /team-score, kept here rather than in the code so a desk can
+-- be re-staffed from the Supabase table editor without a deploy. One row per
+-- person per team, so somebody on two desks is simply listed twice.
+create table if not exists teams (
+  team_name text not null,
+  user_id text not null,
+  primary key (team_name, user_id)
+);
+
+alter table teams enable row level security;
+
+-- Snipes per person per week. Weeks start Monday, as Postgres date_trunc does,
+-- but in Ann Arbor time: read in UTC a Sunday evening snipe would be counted
+-- against the week after the one it happened in.
+create or replace view weekly_snipers with (security_invoker = on) as
+select
+  (date_trunc('week', created_at at time zone 'America/Detroit'))::date as week_start,
+  sniper_id,
+  count(*) as total_snipes
+from snipes
+group by 1, 2;
