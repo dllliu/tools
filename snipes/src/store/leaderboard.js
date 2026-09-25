@@ -21,23 +21,40 @@ async function readBoard(view, idColumn, totalColumn) {
 const topSnipers = () => readBoard('top_snipers', 'sniper_id', 'total_snipes');
 const topSniped = () => readBoard('top_sniped', 'sniped_id', 'total_sniped');
 
+// PostgREST caps a response at a thousand rows, and silently: a truncated
+// page looks exactly like a short one, so walk until a page comes back short.
+const PAGE = 1000;
+
 /**
- * Snipes these people took during one week, as a map. The view only has rows
- * for weeks somebody was active in, so anyone absent scored nothing and the
- * caller fills in the zero.
+ * Snipes these people took between two instants, as a map. The window is
+ * half-open, and only people who scored appear, so the caller fills in zero
+ * for the rest. Counting here rather than in the database is what lets the
+ * window be any range at all instead of a week a view had to know about.
  */
-async function weeklySnipes(userIds, weekStart) {
-  if (userIds.length === 0) return new Map();
+async function snipesBetween(userIds, fromIso, toIso) {
+  const totals = new Map();
+  if (userIds.length === 0) return totals;
 
-  const { data, error } = await getClient()
-    .from('weekly_snipers')
-    .select('sniper_id, total_snipes')
-    .eq('week_start', weekStart)
-    .in('sniper_id', userIds);
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, error } = await getClient()
+      .from('snipes')
+      .select('sniper_id')
+      .gte('created_at', fromIso)
+      .lt('created_at', toIso)
+      .in('sniper_id', userIds)
+      // Paging is only stable under an order the database will not vary.
+      .order('id')
+      .range(offset, offset + PAGE - 1);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return new Map((data ?? []).map((row) => [row.sniper_id, Number(row.total_snipes)]));
+    const page = data ?? [];
+    for (const row of page) {
+      totals.set(row.sniper_id, (totals.get(row.sniper_id) ?? 0) + 1);
+    }
+
+    if (page.length < PAGE) return totals;
+  }
 }
 
-module.exports = { topSnipers, topSniped, weeklySnipes };
+module.exports = { topSnipers, topSniped, snipesBetween };
