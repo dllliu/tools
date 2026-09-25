@@ -24,7 +24,6 @@ const STYLES = `
   }
   main { max-width: 40rem; margin: 0 auto; }
   h1 { margin: 0 0 .25rem; font-size: 1.75rem; letter-spacing: -.01em; }
-  .sub { margin: 0 0 1.75rem; color: var(--muted); font-size: .9rem; }
   .toggle {
     display: inline-flex; margin-bottom: 1.25rem; padding: .2rem;
     background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
@@ -118,7 +117,7 @@ function renderDashboard({ snipers, sniped }) {
 </head>
 <body>
 <main>
-  <h1>Snipes leaderboard</h1>
+  <h1 id="title">Snipes Leaderboard</h1>
   <div class="toggle">
     <button type="button" data-board="snipers" aria-pressed="true">Top snipers</button>
     <button type="button" data-board="sniped" aria-pressed="false">Top victims</button>
@@ -129,6 +128,8 @@ function renderDashboard({ snipers, sniped }) {
 </main>
 
 <script>
+  const TITLES = { snipers: 'Snipes Leaderboard', sniped: 'Victims Leaderboard' };
+
   // Both boards ship with the page, so the toggle is a visibility flip and
   // the default one still renders with scripting off.
   document.querySelector('.toggle').addEventListener('click', (event) => {
@@ -140,6 +141,7 @@ function renderDashboard({ snipers, sniped }) {
     });
     document.getElementById('board-snipers').hidden = picked !== 'snipers';
     document.getElementById('board-sniped').hidden = picked !== 'sniped';
+    document.getElementById('title').textContent = TITLES[picked];
   });
 </script>
 </body>
