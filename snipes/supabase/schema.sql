@@ -52,7 +52,7 @@ create table if not exists teams (
 
 alter table teams enable row level security;
 
--- /team-score windows are arbitrary date ranges, not just weeks, so the worker
--- filters snipes on created_at rather than reading a pre-grouped view. This
--- index is what keeps that filter from scanning the table.
+-- /team-score counts a week at a time by filtering snipes on created_at, which
+-- keeps week boundaries in one place in the worker instead of baking Ann Arbor
+-- time into a view here. This index is what keeps that filter off a table scan.
 create index if not exists snipes_created_at_idx on snipes (created_at);

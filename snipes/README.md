@@ -12,8 +12,8 @@ with counts stored in Supabase.
   with `SNIPES_CHANNEL_ID`)
 - Public leaderboard at the Worker's root url, with all-time boards for both
   snipers and their victims
-- `/team-score "team name"` reports what each person on a team scored over a
-  week or any date range, and the team's total
+- `/team-score "team name"` reports what each person on a team scored that
+  week, and the team's total
 
 Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-js`.
 
@@ -42,8 +42,8 @@ Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-
    Slack → **View channel details**) into `SNIPES_CHANNEL_ID`.
 8. Under **Slash Commands**, create `/team-score` with the same Request URL as
    Event Subscriptions (`.../slack/events`) and the usage hint
-   `"team name" [last | -2 | 2026-09-01 to 2026-09-11]`. Adding a command
-   changes the app's scopes, so Slack will ask you to reinstall it.
+   `"team name" [this | last | -3]`. Adding a command changes the app's
+   scopes, so Slack will ask you to reinstall it.
 
 Wrangler needs Node 22+:
 
@@ -84,29 +84,26 @@ better trade.
 took that week, then the total. People who scored nothing are listed at zero,
 since a team score is about who turned up as much as who led.
 
-Add an argument to count a different stretch of time:
+Add an argument to look further back:
 
 | Argument | Counts |
 | --- | --- |
 | *(none)* or `this` | the current week |
 | `last` | the week before |
 | `-3` | three weeks back |
-| `2026-09-01 to 2026-09-11` | those days, inclusive at both ends |
 
-A range does not have to be a week or line up with one; `..` works in place
-of `to`. Quote a name that has spaces in it. Without quotes the split falls
-after the last word that could not belong to a period, so `Sports Desk` stays
-whole, and a single word is always a name, leaving a desk called Last
-reachable as itself.
+Quote a name that has spaces in it. Without quotes the last word is only read
+as a week if it reads as one and leaves a name behind, so `Sports Desk` stays
+whole, and a lone word is always a name, leaving a desk called Last reachable
+as itself.
 
 Rosters live in the `teams` table, one row per person per team, so a desk can
 be re-staffed from the Supabase table editor without a deploy. Names match
 without regard to case.
 
-Days and weeks are reckoned in Ann Arbor time, not UTC, so a Sunday evening
-snipe counts against the day it happened on rather than the next one, and a
-range spanning a clock change is still whole days at both ends. Weeks run
-Monday to Sunday. See `src/periods.js`.
+Weeks run Monday to Sunday in Ann Arbor time, not UTC, so a Sunday evening
+snipe counts against the week it happened in, and a week holding a clock
+change is still whole days at both ends. See `src/periods.js`.
 
 ## Local testing
 

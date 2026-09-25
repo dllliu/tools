@@ -1,5 +1,5 @@
-// Everything here is reckoned in Ann Arbor time rather than UTC, so a Sunday
-// evening snipe counts against the day and week it actually happened in.
+// Weeks run Monday to Sunday, reckoned in Ann Arbor time rather than UTC, so
+// a Sunday evening snipe counts against the week it actually happened in.
 const TIMEZONE = 'America/Detroit';
 const DAY_MS = 86400000;
 
@@ -29,23 +29,11 @@ const MONTH_DAY_YEAR = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
-const split = (date) => date.split('-').map(Number);
 const asDate = (ms) => new Date(ms).toISOString().slice(0, 10);
-const wallClock = (date) => {
-  const [year, month, day] = split(date);
+
+function wallClock(date) {
+  const [year, month, day] = date.split('-').map(Number);
   return Date.UTC(year, month - 1, day);
-};
-
-/** Date.UTC rolls February 30th into March rather than refusing it. */
-function isRealDate(date) {
-  const [year, month, day] = split(date);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-
-  return (
-    parsed.getUTCFullYear() === year &&
-    parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day
-  );
 }
 
 /** How far Ann Arbor's clocks sit from UTC at a given instant. */
@@ -76,15 +64,12 @@ function midnight(date) {
   return wall - offsetAt(wall - offsetAt(wall));
 }
 
-/** A period is a pair of inclusive local dates, plus how it was asked for. */
-const period = (from, to, isWeek = false) => ({ from, to, isWeek });
-
+/** A week is its Monday and Sunday, as local dates. */
 function weekOf(date) {
   const wall = wallClock(date);
-  const sinceMonday = (new Date(wall).getUTCDay() + 6) % 7;
-  const monday = wall - sinceMonday * DAY_MS;
+  const monday = wall - ((new Date(wall).getUTCDay() + 6) % 7) * DAY_MS;
 
-  return period(asDate(monday), asDate(monday + 6 * DAY_MS), true);
+  return { from: asDate(monday), to: asDate(monday + 6 * DAY_MS) };
 }
 
 const currentWeek = (now = new Date()) => weekOf(LOCAL_DATE.format(now));
@@ -95,8 +80,8 @@ function shiftWeeks(weeks, now = new Date()) {
 }
 
 /**
- * Half-open instants for a database query: from midnight on the first day up
- * to, but not including, midnight after the last one.
+ * Half-open instants for a database query: from midnight on the Monday up to,
+ * but not including, midnight after the Sunday.
  */
 function bounds({ from, to }) {
   return {
@@ -105,29 +90,19 @@ function bounds({ from, to }) {
   };
 }
 
-/** "week of Sep 21–27", "Sep 1–11", or "Sep 1, 2026–Jan 3, 2027". */
-function format({ from, to, isWeek }) {
+/** "week of Sep 21–27", "Sep 28–Oct 4", or "Dec 28, 2026–Jan 3, 2027". */
+function format({ from, to }) {
   const start = new Date(wallClock(from));
   const end = new Date(wallClock(to));
 
-  let label;
   if (start.getUTCFullYear() !== end.getUTCFullYear()) {
-    label = `${MONTH_DAY_YEAR.format(start)}\u2013${MONTH_DAY_YEAR.format(end)}`;
-  } else if (start.getUTCMonth() === end.getUTCMonth()) {
-    label = `${MONTH_DAY.format(start)}\u2013${end.getUTCDate()}`;
-  } else {
-    label = `${MONTH_DAY.format(start)}\u2013${MONTH_DAY.format(end)}`;
+    return `week of ${MONTH_DAY_YEAR.format(start)}\u2013${MONTH_DAY_YEAR.format(end)}`;
   }
 
-  return isWeek ? `week of ${label}` : label;
+  const closing =
+    start.getUTCMonth() === end.getUTCMonth() ? end.getUTCDate() : MONTH_DAY.format(end);
+
+  return `week of ${MONTH_DAY.format(start)}\u2013${closing}`;
 }
 
-module.exports = {
-  currentWeek,
-  shiftWeeks,
-  period,
-  isRealDate,
-  bounds,
-  format,
-  TIMEZONE,
-};
+module.exports = { currentWeek, shiftWeeks, bounds, format, TIMEZONE };

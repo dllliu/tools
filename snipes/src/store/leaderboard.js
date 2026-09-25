@@ -28,8 +28,8 @@ const PAGE = 1000;
 /**
  * Snipes these people took between two instants, as a map. The window is
  * half-open, and only people who scored appear, so the caller fills in zero
- * for the rest. Counting here rather than in the database is what lets the
- * window be any range at all instead of a week a view had to know about.
+ * for the rest. Taking instants rather than a week keeps the question of
+ * where a week starts in src/periods.js, where the timezone already lives.
  */
 async function snipesBetween(userIds, fromIso, toIso) {
   const totals = new Map();

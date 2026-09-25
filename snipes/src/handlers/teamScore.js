@@ -3,51 +3,30 @@ const { snipesBetween } = require('../store/leaderboard');
 const { displayNames } = require('../slack/userNames');
 const periods = require('../periods');
 
-const USAGE =
-  'Usage: `/team-score "team name" [last | -2 | 2026-09-01 to 2026-09-11]`';
+const USAGE = 'Usage: `/team-score "team name" [this | last | -3]`';
 
 // Phones turn a typed quote into a curly pair, so a name can open with one
 // character and close with a different one.
 const CLOSING_QUOTE = { '"': '"', "'": "'", '\u2018': '\u2019', '\u201c': '\u201d' };
 
-const DATE = '\\d{4}-\\d{2}-\\d{2}';
-const RANGE = new RegExp(`^(${DATE})\\s*(?:to|\\.\\.)\\s*(${DATE})$`, 'i');
+const THIS_WEEK = /^this$/i;
+const LAST_WEEK = /^(last|prev|previous)$/i;
+const WEEKS_BACK = /^-\d+$/;
+const WEEK_WORD = /^(this|last|prev|previous|-\d+)$/i;
 
-// Words that are an attempt at a period, sound or not. Recognising the attempt
-// is what separates "that range runs backwards" from "no such team".
-const PERIOD_WORD = new RegExp(
-  `^(${DATE}|${DATE}\\.\\.${DATE}|to|\\.\\.|this|last|prev|previous|-\\d+)$`,
-  'i',
-);
+/** The week asked for, or null if the word is not one. */
+function parsePeriod(word, now = new Date()) {
+  if (!word || THIS_WEEK.test(word)) return periods.currentWeek(now);
+  if (LAST_WEEK.test(word)) return periods.shiftWeeks(-1, now);
+  if (WEEKS_BACK.test(word)) return periods.shiftWeeks(Number(word), now);
 
-// "2026-09-01 to 2026-09-11" is the longest an argument gets.
-const MAX_WORDS = 3;
-
-/**
- * The window asked for, or null if these words are not one. Weeks still have
- * their shorthands; anything else is a plain range of dates, which is why the
- * end is spelled out rather than inferred from a week the dates fall in.
- */
-function parsePeriod(words, now = new Date()) {
-  const argument = words.join(' ');
-
-  if (words.length === 0 || /^this$/i.test(argument)) return periods.currentWeek(now);
-  if (/^(last|prev|previous)$/i.test(argument)) return periods.shiftWeeks(-1, now);
-  if (/^-\d+$/.test(argument)) return periods.shiftWeeks(Number(argument), now);
-
-  const range = argument.match(RANGE);
-  if (!range) return null;
-
-  const [, from, to] = range;
-  if (!periods.isRealDate(from) || !periods.isRealDate(to) || from > to) return null;
-
-  return periods.period(from, to);
+  return null;
 }
 
 /**
  * A team name can hold spaces, so quoting it settles where it ends. Unquoted,
- * the split falls after the last word that could not be part of a period, so
- * "Sports Desk" stays whole while "Sports Desk last" splits. A single word is
+ * the last word is only a week if it reads as one and leaves a name behind,
+ * so "Sports Desk" stays whole while "Sports Desk last" splits. A lone word is
  * always the name, which leaves a desk called Last reachable as itself.
  */
 function parseArgs(text) {
@@ -56,20 +35,15 @@ function parseArgs(text) {
   const closing = CLOSING_QUOTE[raw[0]];
   const quoted = closing ? raw.indexOf(closing, 1) : -1;
   if (quoted > 0) {
-    return {
-      teamName: raw.slice(1, quoted).trim(),
-      words: raw.slice(quoted + 1).trim().split(/\s+/).filter(Boolean),
-    };
+    return { teamName: raw.slice(1, quoted).trim(), word: raw.slice(quoted + 1).trim() };
   }
 
   const words = raw.split(/\s+/).filter(Boolean);
-  for (let take = Math.min(MAX_WORDS, words.length - 1); take >= 1; take -= 1) {
-    if (words.slice(-take).every((word) => PERIOD_WORD.test(word))) {
-      return { teamName: words.slice(0, -take).join(' '), words: words.slice(-take) };
-    }
+  if (words.length > 1 && WEEK_WORD.test(words.at(-1))) {
+    return { teamName: words.slice(0, -1).join(' '), word: words.at(-1) };
   }
 
-  return { teamName: words.join(' '), words: [] };
+  return { teamName: words.join(' '), word: '' };
 }
 
 function nameList(teams) {
@@ -101,7 +75,7 @@ function format({ team, period, totals, names }) {
 }
 
 async function teamScoreMessage({ text, client, logger = console }) {
-  const { teamName, words } = parseArgs(text);
+  const { teamName, word } = parseArgs(text);
   const teams = await loadTeams();
 
   if (!teamName) return `${USAGE}. ${nameList(teams)}`;
@@ -109,8 +83,8 @@ async function teamScoreMessage({ text, client, logger = console }) {
   const team = teams.get(teamName.toLowerCase());
   if (!team) return `I don't know a team called *${teamName}*. ${nameList(teams)}`;
 
-  const period = parsePeriod(words);
-  if (!period) return `I can't read *${words.join(' ')}* as a period. ${USAGE}`;
+  const period = parsePeriod(word);
+  if (!period) return `I can't read *${word}* as a week. ${USAGE}`;
 
   const { fromIso, toIso } = periods.bounds(period);
   const [totals, names] = await Promise.all([
