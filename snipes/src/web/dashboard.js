@@ -4,63 +4,84 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ENTITIES[char]);
 }
 
+// Lora and Open Sans are the pairing every Daily graphics project loads, and
+// the blue and maize are the house colours. Chronicle Display sets the
+// headlines on michigandaily.com, but it is licensed through the main site's
+// font kit, so Lora bold stands in here as it does in the other projects.
+const FONTS_HREF =
+  'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400' +
+  '&family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap';
+
 const STYLES = `
   :root {
-    color-scheme: dark;
-    --bg: #0f1115;
-    --panel: #171a21;
-    --line: #262b36;
-    --text: #e9edf5;
-    --muted: #949cad;
-    --accent: #ffcb05;
+    color-scheme: light;
+    --paper: #fbfaf6;
+    --ink: #00274c;
+    --muted: #5c6672;
+    --rule: #d5cfc2;
+    --maize: #ffcb05;
+    --serif: Lora, Georgia, "Times New Roman", serif;
+    --sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     padding: 2.5rem 1.25rem 4rem;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.6 var(--serif);
   }
   main { max-width: 40rem; margin: 0 auto; }
-  h1 { margin: 0 0 .25rem; font-size: 1.75rem; letter-spacing: -.01em; }
-  .toggle {
-    display: inline-flex; margin-bottom: 1.25rem; padding: .2rem;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  /* A nameplate rule and the hairline under it, the pairing a newspaper uses
+     to fence the masthead off from the page. */
+  .masthead { margin-bottom: 1.5rem; padding-bottom: 3px; border-bottom: 1px solid var(--ink); }
+  h1 {
+    margin: 0; padding-bottom: .4rem; border-bottom: 3px solid var(--ink);
+    font-size: clamp(2rem, 7vw, 2.75rem); font-weight: 700; line-height: 1.1;
   }
+  /* Section tabs rather than a switch: the maize underline marks the live one
+     the way the paper marks the section you are reading. */
+  .toggle { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; }
   .toggle button {
-    border: 0; background: none; color: var(--muted); cursor: pointer;
-    padding: .4rem .9rem; border-radius: 999px; font: inherit; font-size: .875rem;
+    border: 0; border-bottom: 3px solid transparent; background: none;
+    cursor: pointer; padding: .3rem 0; color: var(--muted);
+    font: 700 .78rem var(--sans); text-transform: uppercase; letter-spacing: .08em;
   }
-  .toggle button[aria-pressed="true"] { background: var(--accent); color: #17181c; font-weight: 600; }
+  .toggle button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--maize); }
   /* Fixed layout so the two boards line up exactly and switching between
      them does not nudge the columns. */
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 0 .5rem .5rem; font-weight: 600; }
-  td { padding: .6rem .5rem; border-top: 1px solid var(--line); }
+  th {
+    text-align: left; padding: 0 .5rem .45rem; color: var(--muted);
+    border-bottom: 2px solid var(--ink);
+    font: 700 .7rem var(--sans); text-transform: uppercase; letter-spacing: .08em;
+  }
+  td { padding: .65rem .5rem; border-top: 1px solid var(--rule); }
+  /* The header already draws a rule, so the first row would double it. */
+  tbody tr:first-child td { border-top: 0; }
   .rank { width: 4rem; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
   .medal { font-size: 1.1rem; line-height: 1; }
-  .total { text-align: right; width: 5rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .total { text-align: right; width: 5rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
   .id { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; }
   .empty { padding: 2rem 0; color: var(--muted); }
-  .faq { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  .faq { margin-top: 3rem; padding-top: 1.25rem; border-top: 3px solid var(--ink); }
   /* Same small-caps treatment as the column headers, so the label reads as
      section furniture rather than as another question. */
   .faq h2 {
-    margin: 0 0 .5rem; padding: 0 .5rem; font-size: .75rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    margin: 0 0 .5rem; padding: 0 .5rem; color: var(--muted);
+    font: 700 .7rem var(--sans); text-transform: uppercase; letter-spacing: .08em;
   }
-  .faq details { border-bottom: 1px solid var(--line); }
+  .faq details { border-bottom: 1px solid var(--rule); }
   /* list-style drops the built-in triangle, which also frees the summary to
      lay itself out as a flex row; the -webkit rule does the same in Safari. */
   .faq summary {
     display: flex; gap: .6rem; align-items: baseline; cursor: pointer;
-    list-style: none; padding: .9rem .5rem; font-size: .95rem; font-weight: 600;
+    list-style: none; padding: .8rem .5rem; font-size: 1.05rem; font-weight: 700;
   }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::before { content: '+'; color: var(--accent); font-weight: 400; }
+  .faq summary::before { content: '+'; color: var(--muted); font-weight: 400; }
   .faq details[open] summary::before { content: '\\2212'; }
-  .faq p { margin: 0; padding: 0 .5rem 1rem 1.6rem; color: var(--muted); font-size: .9rem; max-width: 34rem; }
+  .faq p { margin: 0; padding: 0 .5rem 1.1rem 1.6rem; font-size: .95rem; max-width: 34rem; }
 `;
 
 const MEDALS = [
@@ -157,11 +178,16 @@ function renderDashboard({ snipers, sniped }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Snipes leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="${FONTS_HREF}">
 <style>${STYLES}</style>
 </head>
 <body>
 <main>
-  <h1 id="title">Snipes Leaderboard</h1>
+  <header class="masthead">
+    <h1 id="title">Snipes Leaderboard</h1>
+  </header>
   <div class="toggle">
     <button type="button" data-board="snipers" aria-pressed="true">Top snipers</button>
     <button type="button" data-board="sniped" aria-pressed="false">Top victims</button>
