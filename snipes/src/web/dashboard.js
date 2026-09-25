@@ -119,8 +119,6 @@ function renderDashboard({ snipers, sniped }) {
 <body>
 <main>
   <h1>Snipes leaderboard</h1>
-  <p class="sub">Every snipe on record.</p>
-
   <div class="toggle">
     <button type="button" data-board="snipers" aria-pressed="true">Top snipers</button>
     <button type="button" data-board="sniped" aria-pressed="false">Top victims</button>
