@@ -1,18 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-const config = require('../config');
+const { getClient } = require('./client');
 
 const TABLE = 'snipes';
-
-let client;
-
-function getClient() {
-  if (!client) {
-    client = createClient(config.supabase.url(), config.supabase.serviceKey(), {
-      auth: { persistSession: false },
-    });
-  }
-  return client;
-}
 
 /**
  * Records one snipe against every person it named, in a single statement so a
