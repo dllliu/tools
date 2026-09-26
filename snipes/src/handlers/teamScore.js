@@ -3,7 +3,12 @@ const { snipesBetween } = require('../store/leaderboard');
 const { displayNames } = require('../slack/userNames');
 const periods = require('../periods');
 
-const USAGE = 'Usage: `/score "team name" [this | last | -3]`';
+const USAGE = 'Usage: `/score "team name" | all [this | last | -3]`';
+
+// Reserved, so a desk actually called All would have to be renamed to be
+// reachable. Cheaper than the alternative, where adding such a desk would
+// quietly shadow the standings.
+const ALL = /^all$/i;
 
 // Phones turn a typed quote into a curly pair, so a name can open with one
 // character and close with a different one.
@@ -74,19 +79,53 @@ function format({ team, period, totals, names }) {
   ].join('\n');
 }
 
+/**
+ * Where the teams stand against each other, which is the one thing a single
+ * team's card cannot show. No names are needed, so this asks Slack nothing.
+ */
+function standings({ teams, period, totals }) {
+  const rows = [...teams.values()]
+    .map((team) => ({
+      name: team.name,
+      points: team.userIds.reduce((running, userId) => running + (totals.get(userId) ?? 0), 0),
+    }))
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+
+  const sum = rows.reduce((running, row) => running + row.points, 0);
+
+  return [
+    `*All teams* \u2014 ${periods.format(period)}`,
+    ...rows.map((row) => `${row.name}: \`${row.points}\``),
+    `*Total: \`${sum}\`*`,
+  ].join('\n');
+}
+
 async function teamScoreMessage({ text, client, logger = console }) {
   const { teamName, word } = parseArgs(text);
   const teams = await loadTeams();
 
   if (!teamName) return `${USAGE}. ${nameList(teams)}`;
 
-  const team = teams.get(teamName.toLowerCase());
-  if (!team) return `I don't know a team called *${teamName}*. ${nameList(teams)}`;
+  const everyTeam = ALL.test(teamName);
+  const team = everyTeam ? null : teams.get(teamName.toLowerCase());
+  if (!everyTeam && !team) {
+    return `I don't know a team called *${teamName}*. ${nameList(teams)}`;
+  }
 
   const period = parsePeriod(word);
   if (!period) return `I can't read *${word}* as a week. ${USAGE}`;
 
   const { fromIso, toIso } = periods.bounds(period);
+
+  if (everyTeam) {
+    if (teams.size === 0) return nameList(teams);
+
+    // Somebody sits on one team, but take the distinct set anyway so a stray
+    // duplicate row could never count a snipe towards two teams.
+    const everyone = [...new Set([...teams.values()].flatMap((one) => one.userIds))];
+    return standings({ teams, period, totals: await snipesBetween(everyone, fromIso, toIso) });
+  }
+
   const [totals, names] = await Promise.all([
     snipesBetween(team.userIds, fromIso, toIso),
     displayNames(team.userIds, { client, logger }),

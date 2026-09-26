@@ -12,8 +12,8 @@ with counts stored in Supabase.
   with `SNIPES_CHANNEL_ID`)
 - Public leaderboard at the Worker's root url, with all-time boards for both
   snipers and their victims
-- `/score "team name"` reports what each person on a team scored that
-  week, and the team's total
+- `/score "team name"` reports what each person on a team scored that week and
+  the team's total; `/score all` gives the standings across every team
 
 Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-js`.
 
@@ -42,7 +42,7 @@ Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-
    Slack → **View channel details**) into `SNIPES_CHANNEL_ID`.
 8. Under **Slash Commands**, create `/score` with the same Request URL as
    Event Subscriptions (`.../slack/events`) and the usage hint
-   `"team name" [this | last | -3]`. Adding a command changes the app's
+   `"team name" | all [this | last | -3]`. Adding a command changes the app's
    scopes, so Slack will ask you to reinstall it.
 
 Wrangler needs Node 22+:
@@ -83,6 +83,10 @@ better trade.
 `/score "Web Desk"` lists everyone on the roster with the snipes they
 took that week, then the total. People who scored nothing are listed at zero,
 since a team score is about who turned up as much as who led.
+
+`/score all` gives the standings instead: one line per team with what it
+scored, heaviest first, and the whole game's total underneath. `all` is a
+reserved word, so a desk called All would have to be renamed to be reachable.
 
 Add an argument to look further back:
 
