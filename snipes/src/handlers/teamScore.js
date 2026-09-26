@@ -3,7 +3,7 @@ const { snipesBetween } = require('../store/leaderboard');
 const { displayNames } = require('../slack/userNames');
 const periods = require('../periods');
 
-const USAGE = 'Usage: `/team-score "team name" [this | last | -3]`';
+const USAGE = 'Usage: `/score "team name" [this | last | -3]`';
 
 // Phones turn a typed quote into a curly pair, so a name can open with one
 // character and close with a different one.

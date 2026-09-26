@@ -41,18 +41,35 @@ from snipes
 group by sniped_id
 order by total_sniped desc;
 
--- Rosters behind /team-score, kept here rather than in the code so a desk can
--- be re-staffed from the Supabase table editor without a deploy. One row per
--- person per team, so somebody on two desks is simply listed twice.
+-- Rosters behind /score, kept here rather than in the code so a desk can
+-- be re-staffed from the Supabase table editor without a deploy. Keying on the
+-- person is what holds them to one team: there is nowhere to record a second,
+-- so no snipe can be counted for two teams at once. It also makes moving
+-- somebody an upsert rather than a delete and an insert.
 create table if not exists teams (
-  team_name text not null,
-  user_id text not null,
-  primary key (team_name, user_id)
+  user_id text primary key,
+  team_name text not null
 );
+
+-- The first cut of this table keyed on (team_name, user_id), which let one
+-- person sit on several teams at once. Move the key where that is still so.
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'teams'::regclass
+      and contype = 'p'
+      and array_length(conkey, 1) > 1
+  ) then
+    alter table teams drop constraint teams_pkey;
+    alter table teams add constraint teams_pkey primary key (user_id);
+  end if;
+end $$;
 
 alter table teams enable row level security;
 
--- /team-score counts a week at a time by filtering snipes on created_at, which
+-- /score counts a week at a time by filtering snipes on created_at, which
 -- keeps week boundaries in one place in the worker instead of baking Ann Arbor
 -- time into a view here. This index is what keeps that filter off a table scan.
 create index if not exists snipes_created_at_idx on snipes (created_at);

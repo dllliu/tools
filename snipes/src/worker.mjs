@@ -41,7 +41,7 @@ function slackApp(env) {
     // then let the lazy handler answer over the response url once the counts
     // are in. Workers runs it on the ctx passed to run() below.
     .command(
-      '/team-score',
+      '/score',
       async () => '',
       async ({ payload, context }) =>
         handleTeamScore({
