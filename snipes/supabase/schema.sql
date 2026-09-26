@@ -51,22 +51,6 @@ create table if not exists teams (
   team_name text not null
 );
 
--- The first cut of this table keyed on (team_name, user_id), which let one
--- person sit on several teams at once. Move the key where that is still so.
-do $$
-begin
-  if exists (
-    select 1
-    from pg_constraint
-    where conrelid = 'teams'::regclass
-      and contype = 'p'
-      and array_length(conkey, 1) > 1
-  ) then
-    alter table teams drop constraint teams_pkey;
-    alter table teams add constraint teams_pkey primary key (user_id);
-  end if;
-end $$;
-
 alter table teams enable row level security;
 
 -- /score counts a week at a time by filtering snipes on created_at, which
