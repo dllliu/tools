@@ -7,9 +7,9 @@ with counts stored in Supabase.
 ## Features
 
 - Welcome DM on `team_join`
-- Snipe counter for one channel: an image post that mentions someone credits the
-  poster with a snipe and each mentioned user with a "sniped" (set the channel
-  with `SNIPES_CHANNEL_ID`)
+- Snipe counter in every channel the bot is invited to: an image post that
+  mentions someone credits the poster with a snipe and each mentioned user with
+  a "sniped"
 - Public leaderboard at the Worker's root url, with all-time boards for both
   snipers and their victims
 - `/score "team name"` reports what each person on a team scored that week and
@@ -38,8 +38,9 @@ Counts live in Supabase; the bot reads and writes them with `@supabase/supabase-
    in the Supabase SQL editor, then copy the project URL and service role key
    from **Project Settings → API**. Re-run the file after pulling changes to
    it; everything in there is `if not exists` or `create or replace`.
-7. Copy the channel id you want to count snipes in (right-click the channel in
-   Slack → **View channel details**) into `SNIPES_CHANNEL_ID`.
+7. Invite the bot to each channel you want counted (`/invite @yourbot`). Slack
+   only sends message events for channels it belongs to, so membership is the
+   opt-in; it counts nowhere until invited.
 8. Under **Slash Commands**, create `/score` with the same Request URL as
    Event Subscriptions (`.../slack/events`) and the usage hint
    `"team name" | all [this | last | -3]`. Adding a command changes the app's
@@ -143,7 +144,6 @@ wrangler secret put SLACK_SIGNING_SECRET
 wrangler secret put SLACK_BOT_TOKEN
 wrangler secret put SUPABASE_URL
 wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-wrangler secret put SNIPES_CHANNEL_ID
 ```
 
 Then point Event Subscriptions at `https://<worker-subdomain>.workers.dev/slack/events`.
@@ -158,7 +158,7 @@ running to avoid maintaining two entry points.
 ## Next steps
 
 - Edit welcome copy in `src/handlers/welcome.js`
-- Point the bot at a different channel with `SNIPES_CHANNEL_ID`
+- Add or drop a scoring channel by inviting or removing the bot there
 - Adjust what counts as a snipe in `src/handlers/channelMessage.js`
 - Restyle the leaderboard in `src/web/dashboard.js`
 - Add per-semester boards alongside the views in `supabase/schema.sql`

@@ -15,8 +15,4 @@ module.exports = {
     url: () => requireEnv('SUPABASE_URL'),
     serviceKey: () => requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
   },
-  snipes: {
-    // Required: the bot ignores every channel until this is set.
-    channelId: () => requireEnv('SNIPES_CHANNEL_ID'),
-  },
 };

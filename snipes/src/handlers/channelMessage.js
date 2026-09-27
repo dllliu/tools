@@ -1,11 +1,10 @@
-const config = require('../config');
 const { recordSnipes, countSnipesTaken, countTimesSniped } = require('../store/snipes');
 const { displayName } = require('../slack/userNames');
 
 /**
- * Counts snipes in the channel named by SNIPES_CHANNEL_ID. A snipe is an image
- * post that mentions someone: the poster gets credit, each mentioned user gets
- * a "sniped".
+ * Counts snipes in every channel the bot has been invited to, since Slack only
+ * sends message events for those. A snipe is an image post that mentions
+ * someone: the poster gets credit, each mentioned user gets a "sniped".
  */
 
 // Slack writes mentions as <@U123> and sometimes <@U123|display-name>.
@@ -34,8 +33,6 @@ async function handleChannelMessage({ message, say, client, logger }) {
   if (message.bot_id) return;
 
   try {
-    if (message.channel !== config.snipes.channelId()) return;
-
     const targets = mentionedUsers(message);
     if (targets.length === 0) return;
 

@@ -11,7 +11,6 @@ const SECRETS = [
   'SLACK_BOT_TOKEN',
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'SNIPES_CHANNEL_ID',
 ];
 
 function exposeSecrets(env) {
